@@ -1,0 +1,8 @@
+[Unit]
+Description=Unduruz health check
+After=unduruz-api.service
+
+[Service]
+Type=oneshot
+Environment=APP_DIR=__APP_DIR__
+ExecStart=/usr/local/bin/unduruz-health

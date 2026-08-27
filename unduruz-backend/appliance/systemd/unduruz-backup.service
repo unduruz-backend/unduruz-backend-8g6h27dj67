@@ -1,0 +1,7 @@
+[Unit]
+Description=Unduruz database backup
+
+[Service]
+Type=oneshot
+Environment=APP_DIR=__APP_DIR__
+ExecStart=/usr/local/bin/unduruz-backup nightly

@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Unduruz Control Room</title>
+<style>
+  :root{
+    --ink:#061a19; --panel:#0c2b29; --panel2:#113c39; --line:#1c554f;
+    --text:#eaf5f2; --muted:#7fa9a2; --gold:#ffc94d; --mint:#3ee0c0;
+    --rose:#ff7d9e; --shadow:0 1px 0 #1c554f;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;background:var(--ink);color:var(--text);
+    font:15px/1.5 ui-sans-serif,system-ui,"Segoe UI",sans-serif;}
+  code,.mono,.num{font-family:ui-monospace,"SF Mono",Menlo,monospace;}
+
+  header{position:sticky;top:0;z-index:5;background:rgba(6,26,25,.94);
+    backdrop-filter:blur(8px);border-bottom:1px solid var(--line);}
+  .bar{max-width:1180px;margin:0 auto;padding:14px 20px;
+    display:flex;align-items:center;gap:18px;flex-wrap:wrap;}
+  .brand{font-weight:700;letter-spacing:.14em;font-size:12px;color:var(--gold);}
+  .brand span{color:var(--muted);letter-spacing:.06em;margin-left:8px;font-weight:400;}
+  .stat{margin-left:auto;display:flex;gap:22px;flex-wrap:wrap;}
+  .stat div{text-align:right}
+  .stat .v{font-size:19px;font-weight:700;font-family:ui-monospace,monospace;}
+  .stat .k{font-size:9.5px;letter-spacing:.12em;color:var(--muted);text-transform:uppercase;}
+  .v.real{color:var(--mint)} .v.proj{color:var(--gold)} .v.cap{color:var(--text)}
+
+  main{max-width:1180px;margin:0 auto;padding:22px 20px 60px;
+    display:grid;grid-template-columns:1.35fr .95fr;gap:22px;}
+  @media(max-width:900px){main{grid-template-columns:1fr}}
+
+  h2{font-size:11px;letter-spacing:.16em;text-transform:uppercase;
+    color:var(--muted);margin:0 0 10px;font-weight:600;}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:10px;
+    padding:14px 16px;margin-bottom:14px;}
+
+  /* the signature: a review gate you physically clear */
+  .gate{border-left:3px solid var(--gold);}
+  .gate.empty{border-left-color:var(--line);}
+  .task{border:1px solid var(--line);border-radius:9px;padding:13px 14px;
+    margin-bottom:11px;background:var(--panel2);}
+  .task h3{margin:0 0 3px;font-size:15px;font-weight:650;}
+  .meta{font-size:11px;color:var(--muted);font-family:ui-monospace,monospace;}
+  .checks{margin:10px 0;padding-left:11px;border-left:2px solid var(--gold);
+    font-size:12px;color:var(--muted);}
+  .checks label{display:block;cursor:pointer;padding:2px 0;}
+  .checks input{accent-color:var(--mint);margin-right:7px;}
+  pre.out{white-space:pre-wrap;font-size:12.5px;line-height:1.55;
+    background:var(--ink);border:1px solid var(--line);border-radius:7px;
+    padding:11px 12px;max-height:280px;overflow:auto;margin:10px 0;
+    font-family:ui-monospace,monospace;color:#d7ece7;}
+  .row{display:flex;gap:8px;flex-wrap:wrap;align-items:center;}
+  button{font:inherit;font-size:12.5px;font-weight:600;border:1px solid var(--line);
+    background:var(--panel2);color:var(--text);border-radius:7px;
+    padding:8px 13px;cursor:pointer;}
+  button:hover{border-color:var(--mint)}
+  button.go{background:var(--mint);color:#06231e;border-color:var(--mint)}
+  button.back{background:transparent;color:var(--muted)}
+  button:disabled{opacity:.45;cursor:not-allowed}
+  input[type=text]{flex:1;min-width:180px;font:inherit;font-size:13px;
+    background:var(--ink);color:var(--text);border:1px solid var(--line);
+    border-radius:7px;padding:9px 11px;}
+  input[type=text]:focus,button:focus-visible{outline:2px solid var(--mint);outline-offset:1px;}
+
+  .log{font-family:ui-monospace,monospace;font-size:11.5px;max-height:340px;overflow:auto;}
+  .log div{padding:4px 0;border-bottom:1px solid rgba(255,255,255,.05);
+    display:flex;gap:9px;}
+  .log .who{color:var(--mint);min-width:64px;}
+  .log .t{color:var(--muted);margin-left:auto;font-size:10px;}
+  .sale{display:flex;justify-content:space-between;padding:6px 0;
+    border-bottom:1px solid rgba(255,255,255,.05);font-size:12.5px;}
+  .sale .amt{font-family:ui-monospace,monospace;color:var(--mint);font-weight:700;}
+  .empty{color:var(--muted);font-style:italic;font-size:13px;padding:8px 0;}
+  .pill{font-size:9.5px;letter-spacing:.09em;text-transform:uppercase;
+    padding:2px 7px;border-radius:20px;border:1px solid var(--line);color:var(--muted);}
+  .pill.rev{color:var(--gold);border-color:var(--gold)}
+  .pill.app{color:var(--mint);border-color:var(--mint)}
+  .note{font-size:11.5px;color:var(--muted);line-height:1.55;
+    border-left:2px solid var(--line);padding-left:10px;margin-top:10px;}
+  .brief{white-space:pre-wrap;font-size:13px;line-height:1.6;}
+  #login{max-width:400px;margin:16vh auto;padding:26px;}
+</style>
+</head>
+<body>
+
+<div id="login" class="card" style="display:none">
+  <h2>Control room</h2>
+  <p style="font-size:13px;color:var(--muted)">Paste the dashboard token from your
+    <code>.env</code> to continue.</p>
+  <div class="row">
+    <input type="text" id="tok" placeholder="Dashboard token">
+    <button class="go" onclick="saveTok()">Enter</button>
+  </div>
+</div>
+
+<div id="app" style="display:none">
+<header>
+  <div class="bar">
+    <div class="brand">UNDURUZ<span>control room</span></div>
+    <a href="/game" style="font-size:11px;letter-spacing:.1em;color:var(--mint);
+       text-decoration:none;border:1px solid var(--line);border-radius:6px;
+       padding:6px 11px">OPEN TOWN &rarr;</a>
+    <div class="stat">
+      <div><div class="v real" id="sReal">$0</div><div class="k">Real revenue</div></div>
+      <div><div class="v proj" id="sProj">$0</div><div class="k">Approved, unsold</div></div>
+      <div><div class="v cap" id="sQueue">0</div><div class="k">Awaiting you</div></div>
+      <div><div class="v cap" id="sDrafts">0/0</div><div class="k">Drafts today</div></div>
+    </div>
+  </div>
+</header>
+
+<main>
+  <section>
+    <h2>Waiting on your decision</h2>
+    <div class="card gate" id="gate"></div>
+
+    <h2>Give an order</h2>
+    <div class="card">
+      <div class="row">
+        <input type="text" id="order" placeholder="e.g. build a Notion CRM for wedding photographers">
+        <button class="go" onclick="sendOrder()">Send</button>
+      </div>
+      <div class="note">Your words become one niche-specific task. The agent drafts it;
+        it comes back here for approval before it goes anywhere.</div>
+    </div>
+
+    <h2>Director briefing</h2>
+    <div class="card">
+      <div class="row" style="margin-bottom:10px">
+        <button onclick="askBriefing()">Request briefing</button>
+        <span class="meta" id="briefTime"></span>
+      </div>
+      <div class="brief" id="brief"><span class="empty">No briefing yet.</span></div>
+    </div>
+  </section>
+
+  <section>
+    <h2>Real sales</h2>
+    <div class="card" id="sales"></div>
+
+    <h2>Activity</h2>
+    <div class="card log" id="log"></div>
+
+    <h2>In flight</h2>
+    <div class="card" id="flight"></div>
+  </section>
+</main>
+</div>
+
+<script>
+let TOKEN = localStorage.getItem('unduruz_token') || '';
+const $ = (id) => document.getElementById(id);
+const money = (c) => '$' + (c / 100).toFixed(2);
+const esc = (s) => String(s == null ? '' : s).replace(/[&<>"]/g,
+  (m) => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[m]));
+const ago = (iso) => {
+  const s = Math.floor((Date.now() - new Date(iso)) / 1000);
+  if (s < 60) return s + 's';
+  if (s < 3600) return Math.floor(s / 60) + 'm';
+  if (s < 86400) return Math.floor(s / 3600) + 'h';
+  return Math.floor(s / 86400) + 'd';
+};
+
+function saveTok() {
+  TOKEN = $('tok').value.trim();
+  localStorage.setItem('unduruz_token', TOKEN);
+  boot();
+}
+async function call(path, opts = {}) {
+  const res = await fetch('/api' + path, {
+    ...opts,
+    headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + TOKEN },
+  });
+  if (res.status === 401) { showLogin(); throw new Error('unauthorized'); }
+  return res.json();
+}
+function showLogin() { $('login').style.display = 'block'; $('app').style.display = 'none'; }
+
+async function refresh() {
+  const s = await call('/state');
+  const review = s.tasks.filter((t) => t.status === 'review');
+  const approved = s.tasks.filter((t) => t.status === 'approved');
+
+  $('sReal').textContent = money(s.totals.real_cents);
+  $('sProj').textContent = money(approved.reduce((a, t) => a + t.est_value_cents, 0));
+  $('sQueue').textContent = review.length;
+  $('sDrafts').textContent = s.usage.drafts + '/' + s.limits.dailyDraftLimit;
+
+  // review gate
+  const gate = $('gate');
+  gate.classList.toggle('empty', review.length === 0);
+  gate.innerHTML = review.length
+    ? review.map((t) => `
+      <div class="task">
+        <h3>${esc(t.title)}</h3>
+        <div class="meta">${esc(t.agent)} &middot; ${esc(t.category)} &middot;
+          ${esc(t.channel || 'internal')}${t.est_value_cents ? ' &middot; est ' + money(t.est_value_cents) : ''}</div>
+        <div class="checks">
+          ${(t.disclosure || []).map((d, i) =>
+            `<label><input type="checkbox" data-t="${t.id}" id="c${t.id}_${i}"
+              onchange="syncGate(${t.id})">${esc(d)}</label>`).join('')}
+        </div>
+        <pre class="out">${esc(t.output || 'Still drafting...')}</pre>
+        <div class="row">
+          <button class="go" id="ok${t.id}" onclick="approve(${t.id})" disabled>Approve</button>
+          <button class="back" onclick="rework(${t.id})">Send back</button>
+        </div>
+      </div>`).join('')
+    : '<div class="empty">Nothing waiting. Drafts land here before anything is published.</div>';
+  review.forEach((t) => syncGate(t.id));
+
+  // approved, ready for you to publish
+  $('flight').innerHTML =
+    (approved.length
+      ? approved.map((t) => `<div class="sale"><span>${esc(t.title)}
+          <span class="pill app">approved</span></span>
+          <button onclick="markPublished(${t.id})">Mark published</button></div>`).join('')
+      : '') +
+    (s.tasks.filter((t) => ['queued', 'drafting', 'rework'].includes(t.status))
+      .map((t) => `<div class="sale"><span>${esc(t.title)}</span>
+        <span class="pill">${esc(t.status)}</span></div>`).join('') ||
+      (approved.length ? '' : '<div class="empty">Agents are idle.</div>'));
+
+  $('sales').innerHTML = s.sales.length
+    ? s.sales.map((x) => `<div class="sale">
+        <span>${esc(x.product)}<br><span class="meta">${esc(x.provider)} &middot; ${ago(x.created_at)} ago</span></span>
+        <span class="amt">${money(x.amount_cents)}</span></div>`).join('')
+    : '<div class="empty">No sales yet. This fills only from verified processor webhooks.</div>';
+
+  $('log').innerHTML = s.events.length
+    ? s.events.map((e) => `<div><span class="who">${esc(e.actor)}</span>
+        <span>${esc(e.text)}</span><span class="t">${ago(e.created_at)}</span></div>`).join('')
+    : '<div class="empty">Quiet.</div>';
+
+  if (s.briefing) {
+    $('brief').textContent = s.briefing.text;
+    $('briefTime').textContent = ago(s.briefing.created_at) + ' ago';
+  }
+}
+
+// Approve stays locked until every disclosure box is ticked.
+function syncGate(id) {
+  const boxes = [...document.querySelectorAll('input[data-t="' + id + '"]')];
+  const btn = $('ok' + id);
+  if (btn) btn.disabled = !boxes.every((b) => b.checked);
+}
+async function approve(id) { await call('/tasks/' + id + '/approve', { method: 'POST' }); refresh(); }
+async function rework(id) {
+  const note = prompt('What needs to change?');
+  if (note === null) return;
+  await call('/tasks/' + id + '/rework', { method: 'POST', body: JSON.stringify({ note }) });
+  refresh();
+}
+async function markPublished(id) { await call('/tasks/' + id + '/published', { method: 'POST' }); refresh(); }
+async function sendOrder() {
+  const el = $('order');
+  const order = el.value.trim();
+  if (!order) return;
+  el.value = '';
+  await call('/order', { method: 'POST', body: JSON.stringify({ order }) });
+  refresh();
+}
+async function askBriefing() { await call('/briefing', { method: 'POST' }); setTimeout(refresh, 4000); }
+
+async function boot() {
+  if (!TOKEN) return showLogin();
+  try {
+    await refresh();
+    $('login').style.display = 'none';
+    $('app').style.display = 'block';
+    setInterval(refresh, 8000);
+  } catch (e) { showLogin(); }
+}
+boot();
+</script>
+</body>
+</html>

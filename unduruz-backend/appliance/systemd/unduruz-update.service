@@ -1,0 +1,10 @@
+[Unit]
+Description=Unduruz auto-update (with rollback)
+After=network-online.target postgresql.service
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+Environment=APP_DIR=__APP_DIR__
+ExecStart=/usr/local/bin/unduruz-update
+TimeoutStartSec=15min

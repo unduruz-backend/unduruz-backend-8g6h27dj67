@@ -1,0 +1,10 @@
+# /etc/cloudflared/config.yml
+# Publishes ONLY the webhook path. The dashboard stays private on Tailscale.
+tunnel: unduruz
+credentials-file: /etc/cloudflared/<TUNNEL-ID>.json
+
+ingress:
+  - hostname: hooks.yourdomain.com
+    path: ^/webhooks/.*
+    service: http://127.0.0.1:8787
+  - service: http_status:404

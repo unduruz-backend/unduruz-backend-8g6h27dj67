@@ -1,0 +1,11 @@
+[Unit]
+Description=Check for updates nightly
+
+[Timer]
+# 4am local, jittered so it is not the same second every night
+OnCalendar=*-*-* 04:00:00
+RandomizedDelaySec=30m
+Persistent=true
+
+[Install]
+WantedBy=timers.target
